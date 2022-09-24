@@ -1,44 +1,37 @@
+from signal import valid_signals
+from xmlrpc.client import TRANSPORT_ERROR
 from django.db import models
 
 
 class CorporateUser(models.Model):
     name = models.CharField(max_length=50, blank=False)
+    
+    def __str__(self) -> str:
+        return self.name
 
 
 class User(models.Model):
     user_choices = (('NORMAL', 'NORMAL'), ('CORPORATE', 'CORPORATE'))
     first_name = models.CharField(max_length=50, blank=False)
-    last_name = models.CharField(max_length=50, null=True)
+    last_name = models.CharField(max_length=50, blank=True, default='')
     email = models.EmailField(max_length=100, unique=True)
-    password = models.CharField(max_length=500)
+    password = models.CharField(max_length=500, blank=False)
     is_email_verified = models.BooleanField(default=False)
-    phone_number = models.PositiveBigIntegerField(null=True)
+    phone_number = models.PositiveBigIntegerField(blank=True, null=True)
     is_phone_verified = models.BooleanField(default=False)
     year_of_experience = models.FloatField(default=0)
-    resume = models.CharField(max_length=100, default='')
-    department = models.CharField(max_length=100, default='')
-    designation = models.CharField(max_length=100, default='')
-    user_type = models.CharField(max_length=100, choices=user_choices)
+    resume = models.CharField(max_length=100, blank=True, null=True)
+    department = models.CharField(max_length=100, blank=True, null=True)
+    designation = models.CharField(max_length=100, blank=True, null=True)
+    user_type = models.CharField(max_length=100, choices=user_choices, default='NORMAL')
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
-    corporate_id = models.ForeignKey(CorporateUser, on_delete=models.DO_NOTHING)
+    corporate_id = models.ForeignKey(CorporateUser, on_delete=models.SET_NULL, blank=True, null=True)
     # last_login = models.DateTimeField()
-    #
-    # def get_full_name(self):
-    #     if self.last_name:
-    #         return f"{self.first_name} {self.last_name}"
-    #     else:
-    #         return self.first_name
-    #
-    # def get_short_name(self):
-    #     return self.first_name
-    #
-    # def get_first_name(self):
-    #     return self.first_name
-    #
-    # def get_last_name(self):
-    #     return self.last_name
+    
+    def __str__(self) -> str:
+        return self.email
 
 
 class Assessment(models.Model):
@@ -48,13 +41,21 @@ class Assessment(models.Model):
     created_by = models.ForeignKey(User, on_delete=models.DO_NOTHING)  # OR CASCADE
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
+    # corporate_id = models.ForeignKey(CorporateUser, on_delete=models.CASCADE) # Need to Confirm with Brijesh
+    
+    def __str__(self) -> str:
+        return self.name
 
 
 class Questionnaire(models.Model):
-    name = models.CharField(max_length=255)
+    name = models.TextField(max_length=1000)
     options = models.JSONField()  # ArrayField in case of any issue
     created_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
+    # corporate_id = models.ForeignKey(CorporateUser, on_delete=models.CASCADE)
+    
+    def __str__(self) -> str:
+        return self.name
 
 
 class AssessmentQuestionnaire(models.Model):
@@ -63,6 +64,9 @@ class AssessmentQuestionnaire(models.Model):
 
     class Meta:
         unique_together = (('assessment_id', 'question_id'),)
+        
+    def __str__(self) -> str:
+        return str(self.assessment_id) + " : " + str(self.question_id)
 
 
 class UserQuestionnaire(models.Model):
